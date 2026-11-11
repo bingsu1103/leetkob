@@ -19,8 +19,8 @@ Expected result:
 - lint: zero warnings and errors;
 - format check: every tracked source/document matches Prettier;
 - type check: strict TypeScript succeeds;
-- tests: 17/17 pass across two files;
-- coverage: 98% statements, 97.14% branches, 100% functions, 97.91% lines;
+- tests: 23/23 pass across two files;
+- coverage: 98.68% statements, 94.91% branches, 100% functions, 98.64% lines;
 - production build: succeeds;
 - dependency audit: zero known vulnerabilities.
 
@@ -36,6 +36,19 @@ git log -p --all -- . ':!package-lock.json' | rg -n 'BEGIN (RSA|OPENSSH|EC) PRIV
 ```
 
 The expected tracked environment file is only `.env.example`; the history search should return no matches. GitHub's public-repository secret scanning remains an additional remote control, not a substitute for this check.
+
+## Team history review
+
+`docs/evidence/CONTRIBUTIONS.md` records the contribution breakdown and
+the scope owned by each member. Verify the final history with:
+
+```bash
+git shortlog -sne HEAD
+git shortlog -sne --all
+```
+
+The submitted branch must show three commits per member. With the two evidence
+branches included, the complete history must show four commits per member.
 
 ## Remote evidence status
 

@@ -213,6 +213,114 @@ describe("POST /labs/{labId}/publish contract", () => {
     expect(response.json()).toMatchObject({ pendingReviewCount: 3 });
     expect(context.subject.publishedAt).toBeNull();
   });
+
+  it("returns RFC 9457 bad-request when Content-Type is json but body is empty", async () => {
+    const context = setup();
+    apps.push(context.app);
+
+    const response = await context.app.inject({
+      method: "POST",
+      url: "/labs/lab-merge-sort/publish",
+      headers: {
+        authorization: "Bearer ta:ta-a",
+        "content-type": "application/json",
+      },
+      body: "",
+    });
+
+    expectProblem(response, 400, "bad-request", "/labs/lab-merge-sort/publish");
+  });
+
+  it("returns RFC 9457 bad-request when body is malformed JSON", async () => {
+    const context = setup();
+    apps.push(context.app);
+
+    const response = await context.app.inject({
+      method: "POST",
+      url: "/labs/lab-merge-sort/publish",
+      headers: {
+        authorization: "Bearer ta:ta-a",
+        "content-type": "application/json",
+      },
+      body: "{ invalid json",
+    });
+
+    expectProblem(response, 400, "bad-request", "/labs/lab-merge-sort/publish");
+  });
+
+  it("returns RFC 9457 unsupported-media-type for an unhandled Content-Type", async () => {
+    const context = setup();
+    apps.push(context.app);
+
+    const response = await context.app.inject({
+      method: "POST",
+      url: "/labs/lab-merge-sort/publish",
+      headers: {
+        authorization: "Bearer ta:ta-a",
+        "content-type": "application/xml",
+      },
+      body: "<publish />",
+    });
+
+    expectProblem(
+      response,
+      415,
+      "unsupported-media-type",
+      "/labs/lab-merge-sort/publish",
+    );
+  });
+
+  it("returns RFC 9457 not-found for an unknown route", async () => {
+    const context = setup();
+    apps.push(context.app);
+
+    const response = await context.app.inject({
+      method: "GET",
+      url: "/unknown-route",
+    });
+
+    expectProblem(response, 404, "not-found", "/unknown-route");
+  });
+
+  it("strips query parameters from the problem instance path", async () => {
+    const context = setup();
+    apps.push(context.app);
+
+    const response = await context.app.inject({
+      method: "POST",
+      url: "/labs/lab-merge-sort/publish?unexpected=1&filter=all",
+    });
+
+    expectProblem(
+      response,
+      401,
+      "authentication-required",
+      "/labs/lab-merge-sort/publish",
+    );
+  });
+
+  it("returns RFC 9457 internal-server-error when domain state is inconsistent", async () => {
+    const context = setup(
+      lab({
+        publishedAt: new Date("2026-11-09T12:00:00.000Z"),
+        publishedBy: null,
+      }),
+    );
+    apps.push(context.app);
+
+    const response = await context.app.inject({
+      method: "POST",
+      url: "/labs/lab-merge-sort/publish",
+      headers: { authorization: "Bearer ta:ta-a" },
+    });
+
+    expectProblem(
+      response,
+      500,
+      "internal-server-error",
+      "/labs/lab-merge-sort/publish",
+    );
+  });
 });
 
 function expectProblem(

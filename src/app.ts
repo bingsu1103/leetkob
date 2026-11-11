@@ -14,6 +14,57 @@ export interface AppOptions {
   logger?: boolean;
 }
 
+function requestPath(url: string): string {
+  const queryIndex = url.indexOf("?");
+  return queryIndex === -1 ? url : url.slice(0, queryIndex);
+}
+
+function problemForStatus(status: number): { slug: string; title: string } {
+  if (status === 415) {
+    return {
+      slug: "unsupported-media-type",
+      title: "Unsupported Media Type",
+    };
+  }
+  if (status === 400) {
+    return { slug: "bad-request", title: "Bad Request" };
+  }
+  return {
+    slug: "internal-server-error",
+    title: "Internal Server Error",
+  };
+}
+
+function getStatusCode(error: unknown): number {
+  if (
+    typeof error === "object" &&
+    error !== null &&
+    "statusCode" in error &&
+    typeof (error as { statusCode?: unknown }).statusCode === "number"
+  ) {
+    const code = (error as { statusCode: number }).statusCode;
+    if (code >= 400 && code < 500) {
+      return code;
+    }
+  }
+  return 500;
+}
+
+function getErrorMessage(error: unknown, fallback: string): string {
+  if (
+    typeof error === "object" &&
+    error !== null &&
+    "message" in error &&
+    typeof (error as { message?: unknown }).message === "string"
+  ) {
+    const msg = (error as { message: string }).message;
+    if (msg.length > 0) {
+      return msg;
+    }
+  }
+  return fallback;
+}
+
 function sendProblem(
   reply: FastifyReply,
   status: number,
@@ -45,12 +96,32 @@ export function buildApp(options: AppOptions): FastifyInstance {
   const app = Fastify({ logger: options.logger ?? false });
   const now = options.now ?? (() => new Date());
 
+  app.setNotFoundHandler((request, reply) => {
+    const instance = requestPath(request.url);
+    return sendProblem(
+      reply,
+      404,
+      "not-found",
+      "Not Found",
+      `Route ${request.method} ${instance} not found.`,
+      instance,
+    );
+  });
+
+  app.setErrorHandler((error: unknown, request, reply) => {
+    const instance = requestPath(request.url);
+    const status = getStatusCode(error);
+    const { slug, title } = problemForStatus(status);
+    const detail = getErrorMessage(error, title);
+    return sendProblem(reply, status, slug, title, detail, instance);
+  });
+
   app.get("/health", () => ({ status: "ok" }));
 
   app.post<{ Params: PublishParams }>(
     "/labs/:labId/publish",
     async (request, reply) => {
-      const instance = request.url;
+      const instance = requestPath(request.url);
       const user = authenticate(request.headers.authorization);
       if (user === null) {
         return sendProblem(
