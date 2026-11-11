@@ -90,6 +90,8 @@ export function buildApp(options: AppOptions): FastifyInstance {
       }
 
       if (lab.publishedAt !== null) {
+        lab.publishedAt = now();
+        lab.publishedBy = user.id;
         return reply.code(200).send(publishedResponse(lab));
       }
 
