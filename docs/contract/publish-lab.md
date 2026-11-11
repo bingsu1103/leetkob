@@ -76,11 +76,13 @@ Every error uses RFC 9457 Problem Details with Content-Type `application/problem
 
 | Problem type suffix               | Status | When                                                                                                |
 | --------------------------------- | -----: | --------------------------------------------------------------------------------------------------- |
+| `bad-request`                     |    400 | Request body is malformed or empty with JSON content-type.                                          |
 | `authentication-required`         |    401 | Token is missing, malformed, expired, or invalid.                                                   |
 | `ta-role-required`                |    403 | Caller is authenticated but is not a TA.                                                            |
 | `lab-not-found`                   |    404 | Lab does not exist or belongs to a class not assigned to this TA.                                   |
 | `submission-deadline-not-reached` |    409 | Server time is before the submission deadline.                                                      |
 | `reviews-pending`                 |    409 | At least one required human-review decision is missing. Includes integer `pendingReviewCount >= 1`. |
+| `unsupported-media-type`          |    415 | Request specifies an unsupported Content-Type header.                                               |
 
 Authorization is checked before lab visibility and state, so an unauthorized caller never learns whether the lab exists, its deadline, or its queue state.
 

@@ -23,5 +23,7 @@
 - Never make a real model call in unit or contract tests.
 - Never edit a test, eval case, or label merely to make a failing implementation pass.
 - Never execute untrusted C++ on the host; the PA#3 sandbox must have no network, secrets, root, host mounts, or Docker socket.
+- Never accept or commit dependency changes without verifying zero vulnerabilities with npm audit (prompted by Fastify 5.6/Vitest 4.0 advisories; see 2026-11-10 dependency security audit in AI-LOG.md).
+- Never accept a red CI check as evidence without verifying workflow step logs executed and caught a defect (prompted by the billing-lock incident; see 2026-11-10 billing-lock diagnosis in AI-LOG.md).
 
-The Problem Details rule and the fixed idempotent response were tightened after contract review; see the 2026-11-10 AI log.
+The dependency audit check and the CI runner execution verification rule were added after real incidents; see the 2026-11-10 entries in AI-LOG.md.
